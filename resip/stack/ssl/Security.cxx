@@ -1497,8 +1497,16 @@ BaseSecurity::getUserPrivateKeyDER(const Data& aor) const
 void
 BaseSecurity::generateUserCert (const Data& pAor, int expireDays, int keyLen )
 {
+#ifdef OPENSSL_IS_BORINGSSL
+   /* BoringSSL does not export X509V3_EXT_conf_nid (declared in header
+    * but not in the exported symbol list on AOSP). Self-signed cert
+    * generation is not on our VoLTE path. */
+   (void)pAor; (void)expireDays; (void)keyLen;
+   throw Exception("generateUserCert not supported with BoringSSL",
+                   __FILE__, __LINE__);
+#else
    int ret;
-   
+
    InfoLog( <<"Generating new user cert for " << pAor );
  
    Data domain;
@@ -1600,6 +1608,7 @@ BaseSecurity::generateUserCert (const Data& pAor, int expireDays, int keyLen )
    
    addCertX509( UserCert, aor, cert, true /* write */ );
    addPrivateKeyPKEY( UserPrivateKey, aor, privkey, true /* write */ );
+#endif /* OPENSSL_IS_BORINGSSL */
 }
 
 MultipartSignedContents*
