@@ -1141,7 +1141,10 @@ SipMessage::header(const ExtensionHeader& headerName) const
    // missing extension header
    resip_assert(false);
 
-   return *(StringCategories*)0;
+   // Unreachable after the assert; clang otherwise flags the null-ref
+   // dereference under -Werror=null-dereference. Return a static ref.
+   static StringCategories unreachable;
+   return unreachable;
 }
 
 StringCategories& 

@@ -63,6 +63,22 @@ cc_library_static {
         "-Wno-deprecated-declarations",
         "-Wno-implicit-fallthrough",
         "-Wno-overloaded-virtual",
+        // Upstream has many classes with virtual methods but non-virtual
+        // dtors (none are polymorphically deleted). AOSP's default flags
+        // make this an error; demote to warning.
+        "-Wno-error=non-virtual-dtor",
+        "-Wno-non-virtual-dtor",
+        // Upstream decorates some by-value return types with `const` —
+        // a no-op the compiler flags.
+        "-Wno-ignored-qualifiers",
+        // Upstream has some maybe-uninitialized paths that the compiler
+        // can't prove are guarded by earlier checks.
+        "-Wno-sometimes-uninitialized",
+        "-Wno-uninitialized",
+        // SipMessage.cxx deliberately does `return *(T*)0` after
+        // resip_assert(false) as an unreachable placeholder.
+        "-Wno-error=null-dereference",
+        "-Wno-null-dereference",
     ],
 
     cppflags: [
@@ -96,6 +112,12 @@ cc_library_static {
         "resip/stack/ssl/*.cxx",
     ],
 
+    exclude_srcs: [
+        // Platform-specific security providers; not applicable to Android.
+        "resip/stack/ssl/MacSecurity.cxx",
+        "resip/stack/ssl/WinSecurity.cxx",
+    ],
+
     local_include_dirs: [
         "android",
         ".",
@@ -117,6 +139,22 @@ cc_library_static {
         "-Wno-deprecated-declarations",
         "-Wno-implicit-fallthrough",
         "-Wno-overloaded-virtual",
+        // Upstream has many classes with virtual methods but non-virtual
+        // dtors (none are polymorphically deleted). AOSP's default flags
+        // make this an error; demote to warning.
+        "-Wno-error=non-virtual-dtor",
+        "-Wno-non-virtual-dtor",
+        // Upstream decorates some by-value return types with `const` —
+        // a no-op the compiler flags.
+        "-Wno-ignored-qualifiers",
+        // Upstream has some maybe-uninitialized paths that the compiler
+        // can't prove are guarded by earlier checks.
+        "-Wno-sometimes-uninitialized",
+        "-Wno-uninitialized",
+        // SipMessage.cxx deliberately does `return *(T*)0` after
+        // resip_assert(false) as an unreachable placeholder.
+        "-Wno-error=null-dereference",
+        "-Wno-null-dereference",
     ],
 
     cppflags: [
@@ -165,6 +203,22 @@ cc_library_static {
         "-Wno-deprecated-declarations",
         "-Wno-implicit-fallthrough",
         "-Wno-overloaded-virtual",
+        // Upstream has many classes with virtual methods but non-virtual
+        // dtors (none are polymorphically deleted). AOSP's default flags
+        // make this an error; demote to warning.
+        "-Wno-error=non-virtual-dtor",
+        "-Wno-non-virtual-dtor",
+        // Upstream decorates some by-value return types with `const` —
+        // a no-op the compiler flags.
+        "-Wno-ignored-qualifiers",
+        // Upstream has some maybe-uninitialized paths that the compiler
+        // can't prove are guarded by earlier checks.
+        "-Wno-sometimes-uninitialized",
+        "-Wno-uninitialized",
+        // SipMessage.cxx deliberately does `return *(T*)0` after
+        // resip_assert(false) as an unreachable placeholder.
+        "-Wno-error=null-dereference",
+        "-Wno-null-dereference",
     ],
 
     cppflags: [

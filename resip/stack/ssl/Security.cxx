@@ -971,7 +971,12 @@ BaseSecurity::addPrivateKeyPEM( PEMType type,
          char buffer[120];
          unsigned long err = ERR_get_error();
          ERR_error_string(err, buffer);
+#ifndef OPENSSL_IS_BORINGSSL
          if(ERR_GET_LIB(err) == ERR_LIB_EVP && ERR_GET_REASON(err) == EVP_R_BAD_DECRYPT)
+#else
+         /* BoringSSL does not expose EVP_R_BAD_DECRYPT */
+         if (false)
+#endif
          {
             ErrLog(<< "Could not read private key (error=" << buffer << ") - likely incorrect password provided, may load correctly when transports are added with appropriate password");
          }
@@ -1765,7 +1770,13 @@ BaseSecurity::encrypt(Contents* bodyIn, const Data& recipCertName )
    const EVP_CIPHER* cipher =  EVP_aes_128_cbc(); 
    resip_assert( cipher );
 
+#ifdef OPENSSL_IS_BORINGSSL
+   /* BoringSSL dropped PKCS7. S/MIME-encrypt is not available. */
+   PKCS7* pkcs7 = nullptr;
+   throw Exception("S/MIME (PKCS7) not supported with BoringSSL", __FILE__, __LINE__);
+#else
    PKCS7* pkcs7 = PKCS7_encrypt( certs, in, cipher, flags);
+#endif
    if ( !pkcs7 )
    {
       BIO_free(in);
@@ -2103,7 +2114,12 @@ BaseSecurity::decrypt( const Data& decryptorAor, const Pkcs7Contents* contents)
          EVP_PKEY* privateKey = mUserPrivateKeys[decryptorAor];
          X509* publicCert = mUserCerts[decryptorAor];
 
+#ifdef OPENSSL_IS_BORINGSSL
+         /* BoringSSL dropped PKCS7. S/MIME-decrypt is not available. */
+         if ( true )
+#else
          if ( PKCS7_decrypt(pkcs7, privateKey, publicCert, out, flags ) != 1 )
+#endif
          {
             ErrLog( << "Problems doing PKCS7_decrypt" );
             while (1)
@@ -2338,7 +2354,13 @@ BaseSecurity::checkSignature(MultipartSignedContents* multi,
    flags |= PKCS7_NOINTERN;
 
    // matches on certificate issuer and serial number - they must be unique
+#ifdef OPENSSL_IS_BORINGSSL
+   /* BoringSSL dropped PKCS7. S/MIME signer extraction not available. */
+   STACK_OF(X509)* signers = nullptr;
+   throw Exception("S/MIME (PKCS7) not supported with BoringSSL", __FILE__, __LINE__);
+#else
    STACK_OF(X509)* signers = PKCS7_get0_signers(pkcs7, certs, flags);
+#endif
    if ( signers )
    {
 
@@ -2430,7 +2452,12 @@ BaseSecurity::checkSignature(MultipartSignedContents* multi,
             flags |= PKCS7_NOVERIFY;
          }
 
+#ifdef OPENSSL_IS_BORINGSSL
+         /* BoringSSL dropped PKCS7. S/MIME signature verification not available. */
+         if ( true )
+#else
          if ( PKCS7_verify(pkcs7, certs, mRootTlsCerts, pkcs7Bio, out, flags ) != 1 )
+#endif
          {
             ErrLog( << "Problems doing PKCS7_verify" );
 
@@ -2807,10 +2834,12 @@ BaseSecurity::parseOpenSSLCTXOption(const Data& optionName)
       return SSL_OP_CISCO_ANYCONNECT;
    }
 #endif
+#ifdef SSL_OP_COOKIE_EXCHANGE
    if(optionName == "SSL_OP_COOKIE_EXCHANGE")
    {
       return SSL_OP_COOKIE_EXCHANGE;
    }
+#endif
 #if defined SSL_OP_CRYPTOPRO_TLSEXT_BUG
    if(optionName == "SSL_OP_CRYPTOPRO_TLSEXT_BUG")
    {
