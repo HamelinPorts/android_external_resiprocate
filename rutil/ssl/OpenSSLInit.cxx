@@ -50,15 +50,17 @@ OpenSSLInit::OpenSSLInit()
 {
 /* The OpenSSL memory leak checking has been deprecated since
    OpenSSL v3.0.  OpenSSL developers recommend that we rely
-   on modern compilers to provide the same functionality. */
+   on modern compilers to provide the same functionality.
+   BoringSSL (AOSP) dropped these symbols entirely even though it
+   reports an OPENSSL_VERSION_NUMBER < 3.0, so skip for BoringSSL. */
 #if defined(LIBRESSL_VERSION_NUMBER)
 	CRYPTO_malloc_debug_init();
 	CRYPTO_set_mem_debug_options(V_CRYPTO_MDEBUG_ALL);
-#elif (OPENSSL_VERSION_NUMBER < 0x30000000L)
+#elif (OPENSSL_VERSION_NUMBER < 0x30000000L) && !defined(OPENSSL_IS_BORINGSSL)
 	CRYPTO_set_mem_debug(1);
 #endif
 
-#if (OPENSSL_VERSION_NUMBER < 0x30000000L) || defined(LIBRESSL_VERSION_NUMBER)
+#if ((OPENSSL_VERSION_NUMBER < 0x30000000L) && !defined(OPENSSL_IS_BORINGSSL)) || defined(LIBRESSL_VERSION_NUMBER)
 	CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ON);
 #endif
 

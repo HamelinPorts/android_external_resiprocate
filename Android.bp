@@ -36,6 +36,10 @@ cc_library_static {
         "rutil/Plugin.cxx",
         "rutil/ProtonThreadBase.cxx",
         "rutil/PyExtensionBase.cxx",
+        // LocalDns is the bundled fallback resolver; never used when
+        // USE_CARES is set. Its ares_query callback signature is also
+        // out of date versus c-ares 1.34.x.
+        "rutil/dns/LocalDns.cxx",
     ],
 
     local_include_dirs: [
@@ -48,10 +52,9 @@ cc_library_static {
     cflags: [
         "-DHAVE_CONFIG_H",
         "-D_RESIP_MONOTONIC_CLOCK",
-        "-DRESIP_USE_STL_STREAMS",
         "-DUSE_IPV6",
         "-DUSE_SSL",
-        "-DUSE_ARES",
+        "-DUSE_CARES",
         "-Wno-unused-parameter",
         "-Wno-unused-variable",
         "-Wno-unused-function",
@@ -103,10 +106,9 @@ cc_library_static {
     cflags: [
         "-DHAVE_CONFIG_H",
         "-D_RESIP_MONOTONIC_CLOCK",
-        "-DRESIP_USE_STL_STREAMS",
         "-DUSE_IPV6",
         "-DUSE_SSL",
-        "-DUSE_ARES",
+        "-DUSE_CARES",
         "-Wno-unused-parameter",
         "-Wno-unused-variable",
         "-Wno-unused-function",
@@ -152,10 +154,9 @@ cc_library_static {
     cflags: [
         "-DHAVE_CONFIG_H",
         "-D_RESIP_MONOTONIC_CLOCK",
-        "-DRESIP_USE_STL_STREAMS",
         "-DUSE_IPV6",
         "-DUSE_SSL",
-        "-DUSE_ARES",
+        "-DUSE_CARES",
         "-Wno-unused-parameter",
         "-Wno-unused-variable",
         "-Wno-unused-function",
