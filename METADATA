@@ -1,0 +1,20 @@
+name: "resiprocate"
+description:
+    "reSIProcate is a C++ SIP stack. Used by HamelinPortsImsService "
+    "(packages/apps/HamelinPortsImsService) via JNI to replace Samsung's "
+    "libsec-ims on LOS ports. Samsung's stock imsservice is itself built "
+    "on reSIProcate, so the wire behaviour is known-good on real carriers."
+
+third_party {
+  url {
+    type: HOMEPAGE
+    value: "https://resiprocate.org/"
+  }
+  url {
+    type: GIT
+    value: "https://github.com/resiprocate/resiprocate"
+  }
+  version: "resiprocate-1.13.2"
+  license_type: NOTICE
+  last_upgrade_date { year: 2024 month: 5 day: 14 }
+}

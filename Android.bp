@@ -1,0 +1,179 @@
+// reSIProcate — Android/Soong build, pinned at upstream tag resiprocate-1.13.2.
+// License: Vovida Software License v1.0 (Apache-1.1-derived, permissive).
+// Consumed by packages/apps/HamelinPortsImsService via JNI.
+
+package {
+    default_applicable_licenses: ["external_resiprocate_license"],
+}
+
+license {
+    name: "external_resiprocate_license",
+    visibility: [":__subpackages__"],
+    license_kinds: [
+        "SPDX-license-identifier-BSD",
+    ],
+    license_text: ["LICENSE.md"],
+}
+
+// ---------------------------------------------------------------------------
+// rutil — utility library (threads, DNS via c-ares, logging, parser helpers)
+// ---------------------------------------------------------------------------
+
+cc_library_static {
+    name: "libresip_rutil",
+    vendor_available: true,
+
+    srcs: [
+        "rutil/*.cxx",
+        "rutil/dns/*.cxx",
+        "rutil/stun/*.cxx",
+        "rutil/hep/*.cxx",
+        "rutil/ssl/*.cxx",
+    ],
+
+    exclude_srcs: [
+        "rutil/WinCompat.cxx",
+        "rutil/Plugin.cxx",
+        "rutil/ProtonThreadBase.cxx",
+        "rutil/PyExtensionBase.cxx",
+    ],
+
+    local_include_dirs: [
+        "android",
+        ".",
+    ],
+
+    export_include_dirs: ["."],
+
+    cflags: [
+        "-DHAVE_CONFIG_H",
+        "-D_RESIP_MONOTONIC_CLOCK",
+        "-DRESIP_USE_STL_STREAMS",
+        "-DUSE_IPV6",
+        "-DUSE_SSL",
+        "-DUSE_ARES",
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-Wno-unused-function",
+        "-Wno-sign-compare",
+        "-Wno-missing-field-initializers",
+        "-Wno-deprecated-declarations",
+        "-Wno-implicit-fallthrough",
+        "-Wno-overloaded-virtual",
+    ],
+
+    cppflags: [
+        "-std=gnu++17",
+        "-fexceptions",
+    ],
+
+    rtti: true,
+
+    static_libs: [
+        "libcares",
+    ],
+
+    shared_libs: [
+        "libssl",
+        "libcrypto",
+    ],
+}
+
+// ---------------------------------------------------------------------------
+// resip/stack — the SIP parser/transport stack
+// ---------------------------------------------------------------------------
+
+cc_library_static {
+    name: "libresip_stack",
+    vendor_available: true,
+
+    srcs: [
+        "resip/stack/*.cxx",
+        "resip/stack/gen/*.cxx",
+        "resip/stack/ssl/*.cxx",
+    ],
+
+    local_include_dirs: [
+        "android",
+        ".",
+    ],
+
+    export_include_dirs: ["."],
+
+    cflags: [
+        "-DHAVE_CONFIG_H",
+        "-D_RESIP_MONOTONIC_CLOCK",
+        "-DRESIP_USE_STL_STREAMS",
+        "-DUSE_IPV6",
+        "-DUSE_SSL",
+        "-DUSE_ARES",
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-Wno-unused-function",
+        "-Wno-sign-compare",
+        "-Wno-missing-field-initializers",
+        "-Wno-deprecated-declarations",
+        "-Wno-implicit-fallthrough",
+        "-Wno-overloaded-virtual",
+    ],
+
+    cppflags: [
+        "-std=gnu++17",
+        "-fexceptions",
+    ],
+
+    rtti: true,
+
+    whole_static_libs: ["libresip_rutil"],
+    static_libs: ["libcares"],
+    shared_libs: ["libssl", "libcrypto"],
+}
+
+// ---------------------------------------------------------------------------
+// resip/dum — Dialog Usage Manager (sits on top of the SIP stack)
+// ---------------------------------------------------------------------------
+
+cc_library_static {
+    name: "libresip_dum",
+    vendor_available: true,
+
+    srcs: [
+        "resip/dum/*.cxx",
+        "resip/dum/ssl/*.cxx",
+    ],
+
+    local_include_dirs: [
+        "android",
+        ".",
+    ],
+
+    export_include_dirs: ["."],
+
+    cflags: [
+        "-DHAVE_CONFIG_H",
+        "-D_RESIP_MONOTONIC_CLOCK",
+        "-DRESIP_USE_STL_STREAMS",
+        "-DUSE_IPV6",
+        "-DUSE_SSL",
+        "-DUSE_ARES",
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-Wno-unused-function",
+        "-Wno-sign-compare",
+        "-Wno-missing-field-initializers",
+        "-Wno-deprecated-declarations",
+        "-Wno-implicit-fallthrough",
+        "-Wno-overloaded-virtual",
+    ],
+
+    cppflags: [
+        "-std=gnu++17",
+        "-fexceptions",
+    ],
+
+    rtti: true,
+
+    whole_static_libs: ["libresip_stack"],
+    static_libs: ["libcares"],
+    shared_libs: ["libssl", "libcrypto"],
+}
