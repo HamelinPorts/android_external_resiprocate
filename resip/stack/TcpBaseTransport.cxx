@@ -3,6 +3,7 @@
 #endif
 
 #include <memory>
+#include <cstring>
 #include "rutil/compat.hxx"
 #include "rutil/Socket.hxx"
 #include "rutil/Data.hxx"
@@ -86,6 +87,16 @@ TcpBaseTransport::init()
        error(e);
        throw Exception("Failed setsockopt", __FILE__,__LINE__);
    }
+#ifdef SO_REUSEPORT
+   /* Also set SO_REUSEPORT on the listening socket. Required so that
+    * an outbound TcpBaseTransport socket (in makeOutgoingConnection,
+    * when setOutgoingBindPort(true) is set — needed for IMS/IPsec port
+    * pinning) can bind to the same (IP, port) as this listener. Both
+    * sockets must carry SO_REUSEPORT for Linux to allow the coexistence.
+    * Benign for clients that don't bind twice. */
+   ::setsockopt ( mFd, SOL_SOCKET, SO_REUSEPORT,
+                  reinterpret_cast<const char*>(&on), sizeof(on));
+#endif
 
    bind();
    makeSocketNonBlocking(mFd);
@@ -250,7 +261,25 @@ TcpBaseTransport::makeOutgoingConnection(const Tuple &dest,
    char _sa[RESIP_MAX_SOCKADDR_SIZE];
    sockaddr *sa = reinterpret_cast<sockaddr*>(_sa);
    resip_assert(RESIP_MAX_SOCKADDR_SIZE >= mTuple.length());
-   mTuple.copySockaddrAnyPort(sa);
+   if (mOutgoingBindPort)
+   {
+      /* IMS/IPsec: pin the source port to the transport's local port
+       * so kernel xfrm policies matching (UE portC, P-CSCF port-s)
+       * match the outbound 4-tuple. SO_REUSEADDR lets this coexist
+       * with the listening socket on the same port. */
+      int one = 1;
+      ::setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+                   reinterpret_cast<const char*>(&one), sizeof(one));
+#ifdef SO_REUSEPORT
+      ::setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
+                   reinterpret_cast<const char*>(&one), sizeof(one));
+#endif
+      memcpy(sa, &mTuple.getSockaddr(), mTuple.length());
+   }
+   else
+   {
+      mTuple.copySockaddrAnyPort(sa);
+   }
 #ifdef USE_NETNS
       NetNs::setNs(netNs());
 #endif

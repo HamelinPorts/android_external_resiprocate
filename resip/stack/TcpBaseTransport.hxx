@@ -37,6 +37,16 @@ class TcpBaseTransport : public InternalTransport, public FdPollItemIf
 
       virtual void invokeAfterSocketCreationFunc() const;
 
+      /** When true, outbound TCP connections created by this transport
+       *  bind to the transport's full local (IP + port) rather than an
+       *  ephemeral source port. SO_REUSEADDR / SO_REUSEPORT are applied
+       *  so the bind coexists with the listening socket. Required for
+       *  IMS IPsec: the xfrm policy matches a specific 4-tuple of
+       *  (UE portC, P-CSCF port-s) and ephemeral source ports miss it.
+       *  Opt-in; default is the upstream behaviour. */
+      void setOutgoingBindPort(bool enable) { mOutgoingBindPort = enable; }
+      bool getOutgoingBindPort() const { return mOutgoingBindPort; }
+
    protected:
       /** Performs constructor activities that depend on virtual
        *  functions specified by derived classes.  Derived classes
@@ -70,6 +80,7 @@ class TcpBaseTransport : public InternalTransport, public FdPollItemIf
    private:
       static const int MaxBufferSize;
       ConnectionManager mConnectionManager;
+      bool mOutgoingBindPort = false;
 };
 
 }
