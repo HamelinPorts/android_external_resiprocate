@@ -257,7 +257,7 @@ TcpBaseTransport::makeOutgoingConnection(const Tuple &dest,
 
    resip_assert(sock != INVALID_SOCKET);
 
-   DebugLog (<<"Opening new connection to " << dest);
+   InfoLog (<<"Opening new connection to " << dest << " mOutgoingBindPort=" << mOutgoingBindPort);
    char _sa[RESIP_MAX_SOCKADDR_SIZE];
    sockaddr *sa = reinterpret_cast<sockaddr*>(_sa);
    resip_assert(RESIP_MAX_SOCKADDR_SIZE >= mTuple.length());
@@ -268,11 +268,17 @@ TcpBaseTransport::makeOutgoingConnection(const Tuple &dest,
        * match the outbound 4-tuple. SO_REUSEADDR lets this coexist
        * with the listening socket on the same port. */
       int one = 1;
-      ::setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+      int r1 = ::setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
                    reinterpret_cast<const char*>(&one), sizeof(one));
+      int e1 = errno;
 #ifdef SO_REUSEPORT
-      ::setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
+      int r2 = ::setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
                    reinterpret_cast<const char*>(&one), sizeof(one));
+      int e2 = errno;
+      InfoLog (<<"IMS/IPsec outgoing-bind: REUSEADDR r=" << r1 << "/errno=" << e1
+                 << " REUSEPORT r=" << r2 << "/errno=" << e2);
+#else
+      InfoLog (<<"IMS/IPsec outgoing-bind: REUSEADDR r=" << r1 << "/errno=" << e1 << " (no REUSEPORT)");
 #endif
       memcpy(sa, &mTuple.getSockaddr(), mTuple.length());
    }
@@ -283,7 +289,30 @@ TcpBaseTransport::makeOutgoingConnection(const Tuple &dest,
 #ifdef USE_NETNS
       NetNs::setNs(netNs());
 #endif
-   if(::bind(sock, sa, mTuple.length()) != 0)
+   int bindrc = ::bind(sock, sa, mTuple.length());
+   if (mOutgoingBindPort)
+   {
+      InfoLog (<<"IMS/IPsec outgoing-bind: bind rc=" << bindrc << " errno=" << errno
+                 << " tuplePort=" << mTuple.getPort());
+      if (bindrc == 0)
+      {
+         /* Introspect the actual bound port to verify — some kernels can
+          * silently rewrite. */
+         char _sb[RESIP_MAX_SOCKADDR_SIZE];
+         sockaddr* sb = reinterpret_cast<sockaddr*>(_sb);
+         socklen_t sblen = sizeof(_sb);
+         if (::getsockname(sock, sb, &sblen) == 0)
+         {
+            int boundPort = -1;
+            if (sb->sa_family == AF_INET6)
+               boundPort = ntohs(reinterpret_cast<sockaddr_in6*>(sb)->sin6_port);
+            else if (sb->sa_family == AF_INET)
+               boundPort = ntohs(reinterpret_cast<sockaddr_in*>(sb)->sin_port);
+            InfoLog (<<"IMS/IPsec outgoing-bind: getsockname bound port=" << boundPort);
+         }
+      }
+   }
+   if(bindrc != 0)
    {
       WarningLog( << "Error in binding to source interface address. " << strerror(errno));
       failReason = TransportFailure::Failure;
