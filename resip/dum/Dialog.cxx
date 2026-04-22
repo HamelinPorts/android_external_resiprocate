@@ -476,6 +476,18 @@ Dialog::dispatch(const SipMessage& msg)
       {
          mNetworkAssociation.update(msg, keepAliveTime, false /* targetSupportsOutbound */); // target supports outbound is detected in registration responses only
       }
+
+      /* IMS PATCH: capture the connection the dialog is established on
+       * (source of any in-dialog message we receive). Used in
+       * Dialog::send to pin in-dialog requests to the same
+       * TCP/IPsec flow. See mEstablishedTarget declaration in the
+       * header for the full rationale. */
+      if (msg.getSource().mFlowKey != 0 &&
+          msg.getSource().getType() != UNKNOWN_TRANSPORT)
+      {
+         mEstablishedTarget = msg.getSource();
+         mEstablishedTarget.onlyUseExistingConnection = true;
+      }
    }
    
    handleTargetRefresh(msg);
@@ -1168,6 +1180,15 @@ Dialog::send(std::shared_ptr<SipMessage> msg)
       mRequests[msg->header(h_CSeq).sequence()] = msg;
    }
    handlePendingTargetRefresh(*msg);
+   /* IMS PATCH: pin in-dialog requests to the connection the dialog
+    * was established on. See mEstablishedTarget in Dialog.hxx for
+    * rationale. Skip if the TU already set a destination. */
+   if (msg->isRequest() &&
+       mEstablishedTarget.mFlowKey != 0 &&
+       msg->getDestination().mFlowKey == 0)
+   {
+      msg->setDestination(mEstablishedTarget);
+   }
    mDum.send(msg);
 }
 

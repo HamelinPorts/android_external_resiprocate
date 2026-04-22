@@ -12,6 +12,7 @@
 #include "resip/stack/NameAddr.hxx"
 #include "resip/stack/CallId.hxx"
 #include "resip/stack/SipMessage.hxx"
+#include "resip/stack/Tuple.hxx"
 #include "resip/dum/NetworkAssociation.hxx"
 #include "resip/dum/DialogUsageManager.hxx"
 
@@ -128,6 +129,18 @@ class Dialog
       InviteSession* mInviteSession;
 
       NetworkAssociation mNetworkAssociation;
+
+      /* IMS PATCH: source tuple of the response that established this
+       * dialog (200 OK). Used by Dialog::send to pin all in-dialog
+       * requests (ACK, UPDATE, BYE, re-INVITE) to the same TCP/IPsec
+       * connection the INVITE was sent on. Without this, reSIProcate's
+       * transport selector falls back to determineSourceInterface()
+       * which can pick the portS transport for outbound requests; the
+       * resulting fresh ephemeral-source-port TCP connection misses
+       * the IPsec out-policy keyed on sport=portC and gets dropped by
+       * P-CSCF, causing the network to BYE the call at ~32 s with
+       * Reason: SIP;cause=504. */
+      Tuple mEstablishedTarget;
 
       //invariants
       typedef enum // need to add
