@@ -74,6 +74,7 @@ class AresDns : public ExternalDns, public FdSetIOObserver
       typedef std::pair<ExternalDnsHandler*, void*> Payload;
       static ExternalDnsRawResult makeRawResult(void *arg, int status, unsigned char *abuf, int alen);
       static ExternalDnsHandler* getHandler(void* arg);
+      static int configureSocket(int fd, int type, void* aresDns);
       struct ares_channeldata* mChannel;
       std::vector<GenericIPAddress> mAdditionalNameservers;
       AfterSocketCreationFuncPtr mSocketFunc;

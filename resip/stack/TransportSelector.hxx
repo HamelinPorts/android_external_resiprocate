@@ -79,6 +79,11 @@ class TransportSelector
       /// Must be called before adding any transports
       void setPollGrp(FdPollGrp *pollGrp);
 
+      /// Called on the sockets this selector creates itself (the connected-UDP
+      /// route probes of determineSourceInterface), as the transports call it on
+      /// theirs, so an application that places every socket can place these too.
+      void setSocketFunc(AfterSocketCreationFuncPtr socketFunc) { mSocketFunc = socketFunc; }
+
       /// Called when the TransportSelector will be running in a different 
       // thread than the TransactionController; this will allow the thread to be 
       // interrupted when poke() is called.
@@ -230,6 +235,7 @@ class TransportSelector
       // fake socket(s) one for each netns, for connect() and route table lookups
       mutable HashMap<Data, Socket> mSockets;
       mutable HashMap<Data, Socket> mSocket6s;
+      AfterSocketCreationFuncPtr mSocketFunc = nullptr;
 
       // An AF_UNSPEC addr_in for rapid unconnect
       GenericIPAddress mUnspecified;

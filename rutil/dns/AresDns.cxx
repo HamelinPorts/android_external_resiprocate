@@ -3,6 +3,7 @@
 #endif
 
 #if !defined(WIN32)
+#include <sys/socket.h>
 #include <sys/types.h>
 #endif
 #include <time.h>
@@ -10,6 +11,7 @@
 #include "rutil/dns/AresDns.hxx"
 #include "rutil/GenericIPAddress.hxx"
 #include "rutil/Timer.hxx"
+#include "rutil/TransportType.hxx"
 
 #include "AresCompat.hxx"
 #if !defined(USE_CARES)
@@ -221,6 +223,15 @@ AresDns::init(int dnsTimeout, int dnsTries, unsigned int features)
     if (ret != Success)
         return ret;
 
+#if defined(USE_CARES)
+    // c-ares creates its sockets itself; give each one to the socket function
+    // before it is connected, as the transports do with theirs.
+    if (mSocketFunc)
+    {
+        ares_set_socket_configure_callback(mChannel, &AresDns::configureSocket, this);
+    }
+#endif
+
 #ifndef USE_CARES
     if (mPollGrp)
     {
@@ -252,6 +263,13 @@ AresDns::init(int dnsTimeout, int dnsTries, unsigned int features)
 #endif
 
     return Success;
+}
+
+int
+AresDns::configureSocket(int fd, int type, void* aresDns)
+{
+    static_cast<AresDns*>(aresDns)->mSocketFunc(fd, type == SOCK_STREAM ? TCP : UDP, __FILE__, __LINE__);
+    return 0;
 }
 
 int

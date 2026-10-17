@@ -126,6 +126,7 @@ SipStack::SipStack(Security* pSecurity,
    
    mTUFifo.setDescription("SipStack::mTUFifo");
    mTransactionController->transportSelector().setPollGrp(mPollGrp);
+   mTransactionController->transportSelector().setSocketFunc(socketFunc);
 
 #if 0
   // .kw. originally tried to share common init() for the two
@@ -206,6 +207,7 @@ SipStack::init(const SipStackOptions& options)
    // grab the security, DnsStub, compression and statsManager
    mTransactionController = new TransactionController(*this, mAsyncProcessHandler, options.mUseDnsVip);
    mTransactionController->transportSelector().setPollGrp(mPollGrp);
+   mTransactionController->transportSelector().setSocketFunc(options.mSocketFunc);
    mTransactionControllerThread = 0;
    mTransportSelectorThread = 0;
 

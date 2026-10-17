@@ -842,6 +842,10 @@ TransportSelector::determineSourceInterface(SipMessage* msg, const Tuple& target
             NetNs::setNs(netNs);
 #endif
             mSockets[netNs] = InternalTransport::socket(UDP, V4); // may throw
+            if (mSocketFunc)
+            {
+               mSocketFunc(mSockets[netNs], UDP, __FILE__, __LINE__);
+            }
          }
          tmp = mSockets[netNs];
       }
@@ -854,6 +858,10 @@ TransportSelector::determineSourceInterface(SipMessage* msg, const Tuple& target
             NetNs::setNs(netNs);
 #endif
             mSocket6s[netNs] = InternalTransport::socket(UDP, V6); // may throw
+            if (mSocketFunc)
+            {
+               mSocketFunc(mSocket6s[netNs], UDP, __FILE__, __LINE__);
+            }
          }
          tmp = mSocket6s[netNs];
       }
